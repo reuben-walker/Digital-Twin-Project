@@ -1,0 +1,230 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>SceneLayerView - query statistics by geometry | Sample | ArcGIS Maps SDK for JavaScript 4.29</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .esri-ui-top-right {
+        max-height: 100%;
+      }
+
+      #queryDiv,
+      #resultDiv {
+        min-width: 250px;
+        font-size: 14px;
+        padding: 10px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .geometry-options {
+        display: flex;
+        flex-direction: row;
+      }
+      .geometry-button {
+        flex: 1;
+        border-style: solid;
+        border-width: 1px;
+        border-image: none;
+      }
+      .geometry-button-selected {
+        background: #4c4c4c;
+        color: #fff;
+      }
+
+      #bufferNum {
+        width: 90%;
+        margin: 2.5em auto 0;
+      }
+
+      .count {
+        white-space: nowrap;
+        font-size: 14px;
+        font-weight: bold;
+        display: inline-block;
+      }
+    </style>
+    <!-- Load the Chart.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+
+    <script>
+      require([
+        "esri/WebScene",
+        "esri/views/SceneView",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch/SketchViewModel",
+        "esri/widgets/Slider",
+        "esri/geometry/geometryEngine",
+        "esri/Graphic",
+        "esri/core/promiseUtils",
+        "esri/layers/GroupLayer"
+      ], (WebScene, SceneView, GraphicsLayer, SketchViewModel, Slider, geometryEngine, Graphic, promiseUtils) => {
+        // Load webscene and display it in a SceneView
+        const webscene = new WebScene({
+          portalItem: {
+            id: "b759f3add5874c11ad13a56def48c320"
+          }
+        });
+
+        // create the SceneView
+        const view = new SceneView({
+          container: "viewDiv",
+          map: webscene
+        });
+
+        window.view = view;
+        // add a GraphicsLayer for the sketches and the buffer
+        const sketchLayer = new GraphicsLayer();
+        const bufferLayer = new GraphicsLayer();
+        view.map.addMany([bufferLayer, sketchLayer]);
+
+        let sceneLayer = null;
+        let sceneLayerView = null;
+        let bufferSize = 0;
+
+        // Assign scene layer once webscene is loaded and initialize UI
+        webscene.load().then(() => {
+          sceneLayer = webscene.layers.find((layer) => {
+            return layer.title === "NovaScotia_bldg_footprints_Clip_v4";
+          })
+
+          floodingGroupLayer = webscene.layers.find((layer) => {
+            return layer.title === "stormsurge_poly_v2" && layer.type === "group";
+            visiblityMode : "exclusive"
+          })
+
+        // Create an array containing all the flooding layers
+        flooding_layers = [];
+
+        flooding_layers[1] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 1m poly";});
+
+        flooding_layers[2] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 2m poly";});
+
+        flooding_layers[3] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 3m poly";});
+
+        flooding_layers[4] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 4m poly";});
+
+        flooding_layers[5] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 5m poly";});
+
+        flooding_layers[6] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 6m poly";});
+
+        flooding_layers[7] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 7m poly";});
+
+        flooding_layers[8] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 8m poly";});
+
+        flooding_layers[9] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 9m poly";});
+
+        flooding_layers[10] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 10m poly";});
+
+        flooding_layers[11] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 11m poly";});
+
+        flooding_layers[12] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 12m poly";});
+
+        flooding_layers[13] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 13m poly";});
+
+        flooding_layers[14] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 14m poly";});
+
+        flooding_layers[15] = floodingGroupLayer.layers.find((childLayer) => {
+         return childLayer.title === "Stormsurge 15m poly";});
+
+         // sceneLayer.outFields = ["min_flooding"];
+
+        });
+
+        // Adds the query and result UI boxes to the main view
+        view.ui.add([queryDiv], "bottom-left");
+        //view.ui.add([resultDiv], "top-right");
+
+        // Create the flood level slider
+        const bufferNumSlider = new Slider({
+          container: "bufferNum",
+          min: 0,
+          max: 15,
+          steps: 1,
+          visibleElements: {
+            labels: true
+          },
+          precision: 0,
+          labelFormatFunction: (value, type) => {
+            return `${value.toString()}m`;
+          },
+          values: [0]
+        });
+
+        // get user entered values for buffer
+        bufferNumSlider.on(["thumb-change", "thumb-drag"], bufferVariablesChanged);
+        function bufferVariablesChanged(event) {
+          bufferSize = event.value;
+          displayFloodingLayer(bufferSize);
+        }
+        
+        function updateSceneLayer() {
+          const query = sceneLayerView.createQuery();
+          query.geometry = sketchGeometry;
+          query.distance = bufferSize;
+          return sceneLayerView.queryObjectIds(query).then(highlightBuildings);
+        }
+
+        function displayFloodingLayer(floodingLevel) {
+                flooding_layers[floodingLevel].visible = true;
+            }
+
+        });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+
+    <div id="queryDiv" class="esri-widget">
+        <div class="tooltip">
+            <label for="bufferNum">Set a flooding level:</label>
+            <div id="bufferNum"></div>
+          </div>
+    </div>
+
+    
+    <div id="resultDiv" class="esri-widget">
+      <div class="count">
+        Flooded Buildings:
+        <div class="count" id="count">0</div>
+      </div>
+      <div class="charts">
+        <div>
+          <canvas id="year-chart" height="250" width="260" />
+        </div>
+        <div>
+          <canvas id="material-chart" width="250" height="300" />
+        </div>
+      </div>
+    </div>
+    
+
+  </body>
+</html>
